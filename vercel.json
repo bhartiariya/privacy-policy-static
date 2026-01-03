@@ -1,6 +1,4 @@
 {
-  "cleanUrls": true,
-  "trailingSlash": false,
   "headers": [
     {
       "source": "/.well-known/apple-app-site-association",
@@ -13,29 +11,11 @@
     }
   ],
   "rewrites": [
-    {
-      "source": "/bhajan/:id",
-      "destination": "/redirect.html"
-    },
-    {
-      "source": "/playlist/:id",
-      "destination": "/redirect.html"
-    },
-    {
-      "source": "/album/:id",
-      "destination": "/redirect.html"
-    },
-    {
-      "source": "/artist/:id",
-      "destination": "/redirect.html"
-    },
-    {
-      "source": "/user-playlist/:id",
-      "destination": "/redirect.html"
-    },
-    {
-      "source": "/user/:id",
-      "destination": "/redirect.html"
-    }
+    { "source": "/bhajan/(.*)", "destination": "/redirect.html" },
+    { "source": "/playlist/(.*)", "destination": "/redirect.html" },
+    { "source": "/album/(.*)", "destination": "/redirect.html" },
+    { "source": "/artist/(.*)", "destination": "/redirect.html" },
+    { "source": "/user-playlist/(.*)", "destination": "/redirect.html" },
+    { "source": "/user/(.*)", "destination": "/redirect.html" }
   ]
 }
