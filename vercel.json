@@ -13,5 +13,13 @@
         }
       ]
     }
+  ],
+  "rewrites": [
+    { "source": "/bhajan/:id", "destination": "/redirect.html" },
+    { "source": "/playlist/:id", "destination": "/redirect.html" },
+    { "source": "/album/:id", "destination": "/redirect.html" },
+    { "source": "/artist/:id", "destination": "/redirect.html" },
+    { "source": "/user-playlist/:id", "destination": "/redirect.html" },
+    { "source": "/user/:id", "destination": "/redirect.html" }
   ]
 }
