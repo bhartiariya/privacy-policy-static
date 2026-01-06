@@ -6,7 +6,6 @@ export default async function handler(req, res) {
   }
   
   try {
-    // Map URL type to Firestore collection
     const collectionMap = {
       'bhajan': 'songs',
       'song': 'songs',
@@ -22,7 +21,6 @@ export default async function handler(req, res) {
       throw new Error(`Invalid type: ${type}`);
     }
     
-    // Fetch from Firestore
     const projectId = 'dadiji-bhajan-sangrah-62543';
     const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/${collection}/${id}`;
     
@@ -34,7 +32,6 @@ export default async function handler(req, res) {
     const data = await response.json();
     const f = data.fields;
     
-    // Extract content data based on type
     let contentName, contentImage, contentDesc, ogType, schemeUrl;
     
     if (type === 'bhajan' || type === 'song') {
@@ -84,7 +81,7 @@ export default async function handler(req, res) {
     
     const borderRadius = ogType === 'profile' ? '50%' : '15px';
     
-    // Generate HTML with Open Graph tags
+    // HTML WITHOUT auto-redirect - Let Universal Links handle it!
     const html = `<!DOCTYPE html>
 <html lang="hi">
 <head>
@@ -107,22 +104,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .c{background:#fff;border-radius:20px;padding:40px;max-width:500px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 img{width:200px;height:200px;border-radius:${borderRadius};margin-bottom:20px;object-fit:cover;box-shadow:0 8px 32px rgba(0,0,0,.2)}
 h1{color:#333;margin:10px 0;font-size:24px;font-weight:600}
-p{color:#666;margin-bottom:20px;font-size:14px}
-.btn{display:inline-block;padding:15px 40px;background:linear-gradient(135deg,#84090B,#c41e3a);color:#fff;text-decoration:none;border-radius:30px;font-weight:700;margin:10px;transition:transform .2s}
+p{color:#666;margin-bottom:20px;font-size:16px}
+.btn{display:inline-block;padding:15px 40px;background:linear-gradient(135deg,#84090B,#c41e3a);color:#fff;text-decoration:none;border-radius:30px;font-weight:700;margin:10px;transition:transform .2s;font-size:16px}
 .btn:hover{transform:translateY(-2px)}
+.btn-secondary{background:linear-gradient(135deg,#34A853,#2d8e47)}
 </style>
 </head>
 <body>
 <div class="c">
 <img src="${contentImage}" alt="${contentName}" onerror="this.src='https://bhajansarovar.com/default.jpg'">
 <h1>${contentName}</h1>
-<p>Opening in Bhajan Sarovar...</p>
+<p>Tap below to open in the app</p>
 <a href="${schemeUrl}" class="btn">Open in App</a>
+<a href="https://play.google.com/store/apps/details?id=com.dadiji.bhajansangrah" class="btn btn-secondary">Download App</a>
 </div>
-<script>
-window.location.href='${schemeUrl}';
-setTimeout(function(){if(document.hasFocus()){console.log('App not detected')}},2000);
-</script>
 </body>
 </html>`;
     
@@ -133,8 +128,6 @@ setTimeout(function(){if(document.hasFocus()){console.log('App not detected')}},
   } catch (error) {
     console.error('Error in content API:', error);
     
-    // Fallback HTML that still redirects to app
-    const fallbackScheme = `bhajansarovar://${type}/${id}`;
     const fallbackHtml = `<!DOCTYPE html>
 <html>
 <head>
@@ -144,9 +137,10 @@ setTimeout(function(){if(document.hasFocus()){console.log('App not detected')}},
 <meta property="og:image" content="https://bhajansarovar.com/default.jpg">
 <title>Bhajan Sarovar</title>
 </head>
-<body>
-<p>Opening Bhajan Sarovar...</p>
-<script>window.location.href='${fallbackScheme}'</script>
+<body style="font-family:sans-serif;text-align:center;padding:40px">
+<h1>Bhajan Sarovar</h1>
+<p>Tap below to open</p>
+<a href="bhajansarovar://${type}/${id}" style="display:inline-block;padding:15px 30px;background:#c41e3a;color:#fff;text-decoration:none;border-radius:25px;margin-top:20px">Open in App</a>
 </body>
 </html>`;
     
