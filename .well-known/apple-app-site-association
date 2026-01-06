@@ -3,12 +3,14 @@
     "apps": [],
     "details": [
       {
-        "appIDs": ["X7YX22FD8F.com.yourapp.bhajansarovar"],
-        "components": [
-          {
-            "/": "/*",
-            "comment": "Matches all paths"
-          }
+        "appID": "X7YX22FD8F.com.dadiji.bhajansarovar",
+        "paths": [
+          "/bhajan/*",
+          "/playlist/*",
+          "/album/*",
+          "/artist/*",
+          "/user/*",
+          "/user-playlist/*"
         ]
       }
     ]
