@@ -3,36 +3,24 @@
     {
       "source": "/.well-known/apple-app-site-association",
       "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/json"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=3600"
-        }
+        {"key": "Content-Type", "value": "application/json"},
+        {"key": "Cache-Control", "value": "public, max-age=3600"}
       ]
     },
     {
       "source": "/.well-known/assetlinks.json",
       "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/json"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=3600"
-        }
+        {"key": "Content-Type", "value": "application/json"},
+        {"key": "Cache-Control", "value": "public, max-age=3600"}
       ]
     }
   ],
   "rewrites": [
-    { "source": "/bhajan/(.*)", "destination": "/redirect.html" },
-    { "source": "/playlist/(.*)", "destination": "/redirect.html" },
-    { "source": "/album/(.*)", "destination": "/redirect.html" },
-    { "source": "/artist/(.*)", "destination": "/redirect.html" },
-    { "source": "/user-playlist/(.*)", "destination": "/redirect.html" },
-    { "source": "/user/(.*)", "destination": "/redirect.html" }
+    {"source": "/bhajan/:id", "destination": "/api/content?type=bhajan&id=:id"},
+    {"source": "/playlist/:id", "destination": "/api/content?type=playlist&id=:id"},
+    {"source": "/user-playlist/:id", "destination": "/api/content?type=user-playlist&id=:id"},
+    {"source": "/album/:id", "destination": "/api/content?type=album&id=:id"},
+    {"source": "/artist/:id", "destination": "/api/content?type=artist&id=:id"},
+    {"source": "/user/:id", "destination": "/api/content?type=user&id=:id"}
   ]
 }
