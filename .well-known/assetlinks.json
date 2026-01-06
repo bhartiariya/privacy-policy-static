@@ -1,0 +1,16 @@
+[
+    {
+        "relation": [
+            "delegate_permission/common.handle_all_urls"
+        ],
+        "target": {
+            "namespace": "android_app",
+            "package_name": "com.dadiji.bhajansangrah",
+            "sha256_cert_fingerprints": [
+                "26:62:87:28:12:32:A4:ED:A3:AC:35:C3:47:A9:B2:BE:D6:D5:EC:54:54:E9:3E:A7:84:A7:2F:0A:7D:0E:33:43",
+                "B5:91:2E:45:1A:93:95:99:7F:71:FD:3E:E4:65:53:E5:44:03:D1:A2:AD:F6:84:8F:EF:57:76:77:27:42:7E:87",
+                "10:D6:5E:B3:AC:3A:F1:F0:1C:81:E3:A6:93:68:48:A1:16:AB:1A:14:35:1C:B3:EE:BB:0D:BD:33:98:72:20:13"
+            ]
+        }
+    }
+]
