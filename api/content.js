@@ -1,150 +1,244 @@
-export default async function handler(req, res) {
+// Vercel Serverless Function for Content Pages
+// This generates dynamic HTML pages with Open Graph tags for rich previews
+
+module.exports = async (req, res) => {
   const { type, id } = req.query;
-  
+
   if (!type || !id) {
     return res.status(400).send('Missing type or id parameter');
   }
+
+  // Map content types to display names
+  const typeNames = {
+    'bhajan': 'Bhajan',
+    'song': 'Song',
+    'playlist': 'Playlist',
+    'user-playlist': 'Playlist',
+    'album': 'Album',
+    'artist': 'Artist',
+    'user': 'User Profile'
+  };
+
+  const contentName = typeNames[type] || 'Content';
+  const contentDesc = `Listen to this ${contentName.toLowerCase()} on Bhajan Sarovar`;
   
-  try {
-    const collectionMap = {
-      'bhajan': 'songs',
-      'song': 'songs',
-      'playlist': 'playlists',
-      'user-playlist': 'userPlaylists',
-      'album': 'albums',
-      'artist': 'artists',
-      'user': 'users'
-    };
-    
-    const collection = collectionMap[type];
-    if (!collection) {
-      throw new Error(`Invalid type: ${type}`);
-    }
-    
-    const projectId = 'dadiji-bhajan-sangrah-62543';
-    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/${collection}/${id}`;
-    
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Firestore returned ${response.status}`);
-    }
-    
-    const data = await response.json();
-    const f = data.fields;
-    
-    let contentName, contentImage, contentDesc, ogType, schemeUrl;
-    
-    if (type === 'bhajan' || type === 'song') {
-      const songName = f.name?.stringValue || f.title?.stringValue || 'Bhajan';
-      const artist = f.artists?.stringValue || f.artist?.stringValue || 'Unknown Artist';
-      contentImage = f.image?.stringValue || f.thumbnail?.stringValue || 'https://bhajansarovar.com/default.jpg';
-      contentName = `${songName} - ${artist}`;
-      contentDesc = `Listen to ${songName} by ${artist} on Bhajan Sarovar`;
-      ogType = 'music.song';
-      schemeUrl = `bhajansarovar://bhajan/${id}`;
-      
-    } else if (type === 'playlist' || type === 'user-playlist') {
-      const playlistName = f.title?.stringValue || f.name?.stringValue || 'Playlist';
-      const songCount = f.songCount?.integerValue || f.songs?.arrayValue?.values?.length || 0;
-      contentImage = f.imageUrl?.stringValue || f.image?.stringValue || 'https://bhajansarovar.com/default.jpg';
-      contentName = playlistName;
-      contentDesc = `${playlistName} • ${songCount} songs on Bhajan Sarovar`;
-      ogType = 'music.playlist';
-      schemeUrl = `bhajansarovar://${type}/${id}`;
-      
-    } else if (type === 'album') {
-      const albumName = f.title?.stringValue || f.name?.stringValue || 'Album';
-      const albumArtist = f.artist?.stringValue || f.artists?.stringValue || 'Various Artists';
-      const albumCount = f.songCount?.integerValue || 0;
-      contentImage = f.imageUrl?.stringValue || f.image?.stringValue || 'https://bhajansarovar.com/default.jpg';
-      contentName = `${albumName} - ${albumArtist}`;
-      contentDesc = `${albumName} by ${albumArtist} • ${albumCount} songs`;
-      ogType = 'music.album';
-      schemeUrl = `bhajansarovar://album/${id}`;
-      
-    } else if (type === 'artist') {
-      contentName = f.name?.stringValue || 'Artist';
-      contentImage = f.imageUrl?.stringValue || f.image?.stringValue || f.profileImage?.stringValue || 'https://bhajansarovar.com/default.jpg';
-      const bio = f.bio?.stringValue || f.description?.stringValue || '';
-      contentDesc = bio ? bio.substring(0, 100) + '...' : `Listen to ${contentName} on Bhajan Sarovar`;
-      ogType = 'profile';
-      schemeUrl = `bhajansarovar://artist/${id}`;
-      
-    } else if (type === 'user') {
-      contentName = f.displayName?.stringValue || f.name?.stringValue || 'User';
-      contentImage = f.profileImage?.stringValue || f.photoUrl?.stringValue || 'https://bhajansarovar.com/default-profile.jpg';
-      const userBio = f.bio?.stringValue || '';
-      contentDesc = userBio || `${contentName}'s profile on Bhajan Sarovar`;
-      ogType = 'profile';
-      schemeUrl = `bhajansarovar://user/${id}`;
-    }
-    
-    const borderRadius = ogType === 'profile' ? '50%' : '15px';
-    
-    // HTML WITHOUT auto-redirect - Let Universal Links handle it!
-    const html = `<!DOCTYPE html>
-<html lang="hi">
+  // Generate the custom scheme URL for fallback
+  const schemeUrl = `bhajansarovar://${type}/${id}`;
+  const webUrl = `https://bhajansarovar.com/${type}/${id}`;
+
+  // HTML with Smart Detection to prevent app-web-app bounce
+  const html = `
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta property="og:type" content="${ogType}">
-<meta property="og:site_name" content="Bhajan Sarovar">
-<meta property="og:title" content="${contentName}">
-<meta property="og:description" content="${contentDesc}">
-<meta property="og:image" content="${contentImage}">
-<meta property="og:url" content="https://bhajansarovar.com/${type}/${id}">
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="${contentName}">
-<meta name="twitter:description" content="${contentDesc}">
-<meta name="twitter:image" content="${contentImage}">
-<title>${contentName} | Bhajan Sarovar</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.c{background:#fff;border-radius:20px;padding:40px;max-width:500px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-img{width:200px;height:200px;border-radius:${borderRadius};margin-bottom:20px;object-fit:cover;box-shadow:0 8px 32px rgba(0,0,0,.2)}
-h1{color:#333;margin:10px 0;font-size:24px;font-weight:600}
-p{color:#666;margin-bottom:20px;font-size:16px}
-.btn{display:inline-block;padding:15px 40px;background:linear-gradient(135deg,#84090B,#c41e3a);color:#fff;text-decoration:none;border-radius:30px;font-weight:700;margin:10px;transition:transform .2s;font-size:16px}
-.btn:hover{transform:translateY(-2px)}
-.btn-secondary{background:linear-gradient(135deg,#34A853,#2d8e47)}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bhajan Sarovar - ${contentName}</title>
+  
+  <!-- Open Graph tags for rich previews -->
+  <meta property="og:title" content="Bhajan Sarovar - ${contentName}" />
+  <meta property="og:description" content="${contentDesc}" />
+  <meta property="og:image" content="https://bhajansarovar.com/og-image.png" />
+  <meta property="og:url" content="${webUrl}" />
+  <meta property="og:type" content="music.song" />
+  <meta property="og:site_name" content="Bhajan Sarovar" />
+  
+  <!-- Twitter Card tags -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Bhajan Sarovar - ${contentName}" />
+  <meta name="twitter:description" content="${contentDesc}" />
+  <meta name="twitter:image" content="https://bhajansarovar.com/og-image.png" />
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #84090B 0%, #5a0607 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      text-align: center;
+      max-width: 400px;
+      width: 100%;
+    }
+    
+    .logo {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+    
+    h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    
+    p {
+      font-size: 16px;
+      opacity: 0.9;
+      margin-bottom: 30px;
+      line-height: 1.5;
+    }
+    
+    /* Hidden by default - only shown if Universal Link fails */
+    #app-fallback {
+      display: none;
+      animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .button {
+      display: inline-block;
+      padding: 16px 32px;
+      margin: 10px;
+      border-radius: 12px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 16px;
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+    
+    .button:active {
+      transform: scale(0.95);
+    }
+    
+    .button-primary {
+      background: white;
+      color: #84090B;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .button-primary:hover {
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    }
+    
+    .button-secondary {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+    }
+    
+    .button-secondary:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    
+    .loading {
+      margin-top: 20px;
+      font-size: 14px;
+      opacity: 0.7;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
-<div class="c">
-<img src="${contentImage}" alt="${contentName}" onerror="this.src='https://bhajansarovar.com/default.jpg'">
-<h1>${contentName}</h1>
-<p>Tap below to open in the app</p>
-<a href="${schemeUrl}" class="btn">Open in App</a>
-<a href="https://play.google.com/store/apps/details?id=com.dadiji.bhajansangrah" class="btn btn-secondary">Download App</a>
-</div>
+  <div class="container">
+    <div class="logo">🎵</div>
+    <h1>Bhajan Sarovar</h1>
+    <p id="loading-text">
+      <span class="spinner"></span>
+      Opening in app...
+    </p>
+    
+    <!-- Fallback UI - only shown if Universal Link fails (app not installed) -->
+    <div id="app-fallback">
+      <p>Tap below to open in the app</p>
+      <button class="button button-primary" onclick="openApp()">Open in App</button>
+      <a href="https://play.google.com/store/apps/details?id=com.dadiji.bhajansangrah" class="button button-secondary">Download App</a>
+    </div>
+  </div>
+
+  <script>
+    // SMART DETECTION: Only show fallback if Universal Link failed
+    let appOpened = false;
+    let detectionComplete = false;
+
+    // Method 1: Page Visibility API
+    // If Universal Link works, page becomes hidden immediately
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) {
+        appOpened = true;
+        console.log('Page hidden - Universal Link worked!');
+      }
+    });
+
+    // Method 2: Blur event (app opens, page loses focus)
+    window.addEventListener('blur', function() {
+      appOpened = true;
+      console.log('Window blur - Universal Link worked!');
+    });
+
+    // Method 3: Timeout check
+    // If page is still visible after 800ms, Universal Link probably failed
+    setTimeout(function() {
+      detectionComplete = true;
+      
+      if (!appOpened && document.visibilityState === 'visible') {
+        console.log('Universal Link failed - showing fallback');
+        // Universal Link didn't work, show fallback
+        document.getElementById('loading-text').style.display = 'none';
+        document.getElementById('app-fallback').style.display = 'block';
+      } else {
+        console.log('Universal Link succeeded - no fallback needed');
+      }
+    }, 800);
+
+    // Function to open app via custom scheme (fallback only)
+    function openApp() {
+      window.location = '${schemeUrl}';
+      
+      // If still on page after 1.5s, redirect to Play Store
+      setTimeout(function() {
+        if (document.visibilityState === 'visible') {
+          window.location = 'https://play.google.com/store/apps/details?id=com.dadiji.bhajansangrah';
+        }
+      }, 1500);
+    }
+
+    // Prevent back button issues
+    window.addEventListener('pageshow', function(event) {
+      if (event.persisted) {
+        // Page was loaded from cache, reset detection
+        appOpened = false;
+        detectionComplete = false;
+      }
+    });
+  </script>
 </body>
-</html>`;
-    
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=3600');
-    return res.status(200).send(html);
-    
-  } catch (error) {
-    console.error('Error in content API:', error);
-    
-    const fallbackHtml = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<meta property="og:title" content="Bhajan Sarovar">
-<meta property="og:description" content="Listen to devotional music">
-<meta property="og:image" content="https://bhajansarovar.com/default.jpg">
-<title>Bhajan Sarovar</title>
-</head>
-<body style="font-family:sans-serif;text-align:center;padding:40px">
-<h1>Bhajan Sarovar</h1>
-<p>Tap below to open</p>
-<a href="bhajansarovar://${type}/${id}" style="display:inline-block;padding:15px 30px;background:#c41e3a;color:#fff;text-decoration:none;border-radius:25px;margin-top:20px">Open in App</a>
-</body>
-</html>`;
-    
-    res.setHeader('Content-Type', 'text/html');
-    return res.status(200).send(fallbackHtml);
-  }
-}
+</html>
+  `;
+
+  res.setHeader('Content-Type', 'text/html');
+  res.status(200).send(html);
+};
