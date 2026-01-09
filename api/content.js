@@ -1,39 +1,44 @@
 // Vercel Serverless Function for Content Pages
 // This generates dynamic HTML pages with Open Graph tags for rich previews
+// FIXED VERSION - Removed smart detection logic that caused app→web→app bounce
 
 module.exports = async (req, res) => {
-  const { type, id } = req.query;
+    const { type, id } = req.query;
 
-  if (!type || !id) {
-    return res.status(400).send('Missing type or id parameter');
-  }
+    if (!type || !id) {
+        return res.status(400).send('Missing type or id parameter');
+    }
 
-  // Map content types to display names
-  const typeNames = {
-    'bhajan': 'Bhajan',
-    'song': 'Song',
-    'playlist': 'Playlist',
-    'user-playlist': 'Playlist',
-    'album': 'Album',
-    'artist': 'Artist',
-    'user': 'User Profile'
-  };
+    // Map content types to display names
+    const typeNames = {
+        'bhajan': 'Bhajan',
+        'song': 'Song',
+        'playlist': 'Playlist',
+        'user-playlist': 'Playlist',
+        'album': 'Album',
+        'artist': 'Artist',
+        'user': 'User Profile'
+    };
 
-  const contentName = typeNames[type] || 'Content';
-  const contentDesc = `Listen to this ${contentName.toLowerCase()} on Bhajan Sarovar`;
-  
-  // Generate the custom scheme URL for fallback
-  const schemeUrl = `bhajansarovar://${type}/${id}`;
-  const webUrl = `https://bhajansarovar.com/${type}/${id}`;
+    const contentName = typeNames[type] || 'Content';
+    const contentDesc = `Listen to this ${contentName.toLowerCase()} on Bhajan Sarovar`;
 
-  // HTML with Smart Detection to prevent app-web-app bounce
-  const html = `
+    // Generate the custom scheme URL for fallback (Android/manual trigger)
+    const schemeUrl = `bhajansarovar://${type}/${id}`;
+    const webUrl = `https://bhajansarovar.com/${type}/${id}`;
+
+    // HTML with simplified fallback - NO smart detection
+    // Universal Links handle app opening automatically; this is ONLY for users without the app
+    const html = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bhajan Sarovar - ${contentName}</title>
+  
+  <!-- iOS Smart App Banner - Native iOS feature for "Open in App" -->
+  <meta name="apple-itunes-app" content="app-id=6738131733">
   
   <!-- Open Graph tags for rich previews -->
   <meta property="og:title" content="Bhajan Sarovar - ${contentName}" />
@@ -74,49 +79,66 @@ module.exports = async (req, res) => {
     }
     
     .logo {
-      font-size: 48px;
-      margin-bottom: 20px;
+      font-size: 64px;
+      margin-bottom: 24px;
+      animation: fadeInUp 0.6s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+      from { 
+        opacity: 0; 
+        transform: translateY(20px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
     }
     
     h1 {
       font-size: 32px;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       font-weight: 600;
+      animation: fadeInUp 0.6s ease-out 0.1s both;
     }
     
-    p {
-      font-size: 16px;
+    .content-type {
+      font-size: 18px;
       opacity: 0.9;
-      margin-bottom: 30px;
-      line-height: 1.5;
+      margin-bottom: 32px;
+      animation: fadeInUp 0.6s ease-out 0.2s both;
     }
     
-    /* Hidden by default - only shown if Universal Link fails */
-    #app-fallback {
-      display: none;
-      animation: fadeIn 0.3s ease-in;
+    p.message {
+      font-size: 16px;
+      opacity: 0.85;
+      margin-bottom: 32px;
+      line-height: 1.6;
+      animation: fadeInUp 0.6s ease-out 0.3s both;
     }
     
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      animation: fadeInUp 0.6s ease-out 0.4s both;
     }
     
     .button {
       display: inline-block;
       padding: 16px 32px;
-      margin: 10px;
       border-radius: 12px;
       text-decoration: none;
       font-weight: 600;
       font-size: 16px;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: all 0.2s ease;
       cursor: pointer;
       border: none;
+      width: 100%;
     }
     
     .button:active {
-      transform: scale(0.95);
+      transform: scale(0.98);
     }
     
     .button-primary {
@@ -127,38 +149,38 @@ module.exports = async (req, res) => {
     
     .button-primary:hover {
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+      transform: translateY(-2px);
     }
     
     .button-secondary {
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.15);
       color: white;
-      border: 2px solid rgba(255, 255, 255, 0.5);
+      border: 2px solid rgba(255, 255, 255, 0.4);
     }
     
     .button-secondary:hover {
-      background: rgba(255, 255, 255, 0.3);
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.6);
     }
     
-    .loading {
-      margin-top: 20px;
+    .store-buttons {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+      animation: fadeInUp 0.6s ease-out 0.5s both;
+    }
+    
+    .store-button {
+      flex: 1;
+      padding: 12px 20px;
+      font-size: 14px;
+    }
+    
+    .note {
+      margin-top: 32px;
       font-size: 14px;
       opacity: 0.7;
-    }
-    
-    .spinner {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-top-color: white;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-right: 8px;
-      vertical-align: middle;
-    }
-    
-    @keyframes spin {
-      to { transform: rotate(360deg); }
+      animation: fadeInUp 0.6s ease-out 0.6s both;
     }
   </style>
 </head>
@@ -166,79 +188,54 @@ module.exports = async (req, res) => {
   <div class="container">
     <div class="logo">🎵</div>
     <h1>Bhajan Sarovar</h1>
-    <p id="loading-text">
-      <span class="spinner"></span>
-      Opening in app...
+    <p class="content-type">${contentName}</p>
+    <p class="message">
+      This content is best experienced in the Bhajan Sarovar app.<br>
+      Download now to listen to devotional music anytime!
     </p>
     
-    <!-- Fallback UI - only shown if Universal Link fails (app not installed) -->
-    <div id="app-fallback">
-      <p>Tap below to open in the app</p>
-      <button class="button button-primary" onclick="openApp()">Open in App</button>
-      <a href="https://play.google.com/store/apps/details?id=com.dadiji.bhajansangrah" class="button button-secondary">Download App</a>
+    <div class="buttons">
+      <!-- For users with app installed (Android fallback) -->
+      <button class="button button-primary" onclick="openApp()">
+        Open in App
+      </button>
     </div>
+    
+    <!-- Download links -->
+    <div class="store-buttons">
+      <a href="https://apps.apple.com/app/id6738131733" class="button button-secondary store-button">
+        App Store
+      </a>
+      <a href="https://play.google.com/store/apps/details?id=com.bhajansarovar.app" class="button button-secondary store-button">
+        Play Store
+      </a>
+    </div>
+    
+    <p class="note">
+      📱 iOS users: If you have the app installed, it should have opened automatically via the Smart App Banner above.
+    </p>
   </div>
 
   <script>
-    // SMART DETECTION: Only show fallback if Universal Link failed
-    let appOpened = false;
-    let detectionComplete = false;
-
-    // Method 1: Page Visibility API
-    // If Universal Link works, page becomes hidden immediately
-    document.addEventListener('visibilitychange', function() {
-      if (document.hidden) {
-        appOpened = true;
-        console.log('Page hidden - Universal Link worked!');
-      }
-    });
-
-    // Method 2: Blur event (app opens, page loses focus)
-    window.addEventListener('blur', function() {
-      appOpened = true;
-      console.log('Window blur - Universal Link worked!');
-    });
-
-    // Method 3: Timeout check
-    // If page is still visible after 800ms, Universal Link probably failed
-    setTimeout(function() {
-      detectionComplete = true;
-      
-      if (!appOpened && document.visibilityState === 'visible') {
-        console.log('Universal Link failed - showing fallback');
-        // Universal Link didn't work, show fallback
-        document.getElementById('loading-text').style.display = 'none';
-        document.getElementById('app-fallback').style.display = 'block';
-      } else {
-        console.log('Universal Link succeeded - no fallback needed');
-      }
-    }, 800);
-
-    // Function to open app via custom scheme (fallback only)
+    // Simple fallback for Android or manual button tap
+    // iOS Universal Links handle app opening automatically
     function openApp() {
+      // Try custom scheme (works on Android if app installed)
       window.location = '${schemeUrl}';
       
-      // If still on page after 1.5s, redirect to Play Store
+      // After 1.5s, if still on page, they probably don't have the app
       setTimeout(function() {
         if (document.visibilityState === 'visible') {
-          window.location = 'https://play.google.com/store/apps/details?id=com.dadiji.bhajansangrah';
+          // Redirect to Play Store (default to Android since iOS handles via Universal Links)
+          window.location = 'https://play.google.com/store/apps/details?id=com.bhajansarovar.app';
         }
       }, 1500);
     }
-
-    // Prevent back button issues
-    window.addEventListener('pageshow', function(event) {
-      if (event.persisted) {
-        // Page was loaded from cache, reset detection
-        appOpened = false;
-        detectionComplete = false;
-      }
-    });
   </script>
 </body>
 </html>
   `;
 
-  res.setHeader('Content-Type', 'text/html');
-  res.status(200).send(html);
+    res.setHeader('Content-Type', 'text/html');
+    res.status(200).send(html);
 };
